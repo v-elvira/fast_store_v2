@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, update
-from sqlalchemy.orm import Session
+from sqlalchemy import select, update, insert
 
 from app.models.categories import Category as CategoryModel
 from app.schemas import Category as CategorySchema, CategoryCreate
@@ -40,7 +39,7 @@ async def create_category(category: CategoryCreate, db: AsyncSession = Depends(g
 
     # Создание новой категории
     db_category = CategoryModel(**category.model_dump())  # sqlite 3.31 had no 'returning' for efficient 'insert':
-    # db_category = db.scalar(insert(CategoryModel).values(**category.model_dump()).returning(CategoryModel))
+    # db_category = await db.scalar(insert(CategoryModel).values(**category.model_dump()).returning(CategoryModel))  # ok
 
     db.add(db_category)
     await db.commit()
