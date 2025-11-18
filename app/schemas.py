@@ -1,5 +1,5 @@
+from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict, EmailStr, SecretStr
-from decimal import Decimal
 
 
 class CategoryCreate(BaseModel):
@@ -34,7 +34,7 @@ class ProductCreate(BaseModel):
                       description="Название товара (3-100 символов)")
     description: str | None = Field(None, max_length=500,
                                        description="Описание товара (до 500 символов)")
-    price: Decimal = Field(gt=0, description="Цена товара (больше 0)", decimal_places=2)
+    price: float = Field(gt=0, description="Цена товара (больше 0)")
     image_url: str | None = Field(None, max_length=200, description="URL изображения товара")
     stock: int = Field(ge=0, description="Количество товара на складе (0 или больше)")
     category_id: int = Field(description="ID категории, к которой относится товар")
@@ -48,9 +48,10 @@ class Product(BaseModel):
     id: int = Field(description="Уникальный идентификатор товара")
     name: str = Field(description="Название товара")
     description: str | None = Field(None, description="Описание товара")
-    price: Decimal = Field(description="Цена товара в рублях", gt=0, decimal_places=2)
+    price: float = Field(description="Цена товара в рублях", gt=0)
     image_url: str | None = Field(None, description="URL изображения товара")
     stock: int = Field(description="Количество товара на складе")
+    rating: float = Field(description="Рейтинг товара")
     category_id: int = Field(description="ID категории")
     is_active: bool = Field(description="Активность товара")
 
@@ -60,7 +61,7 @@ class Product(BaseModel):
 class UserCreate(BaseModel):
     email: EmailStr = Field(description="Email пользователя")
     password: SecretStr = Field(min_length=8, description="Пароль (минимум 8 символов)")
-    role: str = Field(default="buyer", pattern="^(buyer|seller)$", description="Роль: 'buyer' или 'seller'")
+    role: str = Field(default="buyer", pattern="^(buyer|seller|admin)$", description="Роль: 'buyer' или 'seller'")
 
 
 class User(BaseModel):
@@ -68,4 +69,30 @@ class User(BaseModel):
     email: EmailStr
     is_active: bool
     role: str
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewCreate(BaseModel):
+    """
+    Модель для создания и обновления отзыва.
+    Используется в POST и PUT запросах.
+    """
+    product_id: int = Field(description="Уникальный идентификатор продукта")
+    comment: str | None = Field(description="Текст отзыва")
+    grade: int = Field(ge=1, le=5, description="Оценка от 1 до 5")
+
+
+class Review(BaseModel):
+    """
+    Модель для ответа с данными отзыва.
+    Используется в GET-запросах.
+    """
+    id: int = Field(description="Уникальный идентификатор отзыва")
+    user_id: int = Field(description="Уникальный идентификатор покупателя")
+    product_id: int = Field(description="Уникальный идентификатор продукта")
+    comment: str | None = Field(description="Текст отзыва")
+    comment_date: datetime = Field(description="Дата и время отзыва")
+    grade: int = Field(ge=1, le=5, description="Оценка от 1 до 5")
+    is_active: bool = Field(description="Активность отзыва")
+
     model_config = ConfigDict(from_attributes=True)
