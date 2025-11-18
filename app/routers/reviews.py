@@ -77,6 +77,18 @@ async def create_review(
     if product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
 
+    # Проверка отсутствия существующего отзыва покупателя на этот товар
+    result = await db.scalars(
+        select(ReviewModel).where(
+            ReviewModel.product_id == review.product_id,
+            ReviewModel.user_id == current_user.id,
+            ProductModel.is_active == True
+        )
+    )
+    existing_review = result.first()
+    if existing_review:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This product review already exists")
+
     # Создание нового отзыва
     new_review = await db.scalar(insert(ReviewModel).values(
         **review.model_dump(),
