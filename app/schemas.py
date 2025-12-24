@@ -1,6 +1,8 @@
 from decimal import Decimal
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, SecretStr
+
+from fastapi.exceptions import RequestValidationError
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, SecretStr, ValidationError
 from typing import Annotated
 from fastapi import Form
 
@@ -49,13 +51,16 @@ class ProductCreate(BaseModel):
             category_id: Annotated[int, Form(...)],
             description: Annotated[str | None, Form()] = None,
     ) -> "ProductCreate":
-        return cls(
-            name=name,
-            description=description,
-            price=price,
-            stock=stock,
-            category_id=category_id,
-        )                                   # validation errors?
+        try:
+            return cls(
+                name=name,
+                description=description,
+                price=price,
+                stock=stock,
+                category_id=category_id,
+            )                                   # validation errors?
+        except ValidationError as ex:
+            raise RequestValidationError(ex.errors())
 
 
 class Product(BaseModel):
