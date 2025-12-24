@@ -1,6 +1,9 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.staticfiles import StaticFiles
+
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 from app.routers import categories, products, users, reviews, cart, orders
 
@@ -12,6 +15,14 @@ app = FastAPI(
 )
 
 app.mount("/media", StaticFiles(directory="media"), name="media")
+
+# Handle general Pydantic validation errors that might slip through  # for .as_form uncaught
+@app.exception_handler(ValidationError)
+async def validation_exception_handler(request: Request, exc: ValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"message": "Validation error", "details": exc.errors()},
+    )
 
 # Подключаем маршруты категорий и товаров
 app.include_router(categories.router)
